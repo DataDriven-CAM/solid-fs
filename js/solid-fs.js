@@ -9,7 +9,6 @@ class SolidFileSystem{
     async readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("readFile "+path+" ");
         solid.auth.fetch(this.origin+'/public/'+path, {
            method: 'GET',
            headers:{
@@ -66,7 +65,6 @@ class SolidFileSystem{
     async readdir(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-            console.log(path+" ");
         solid.auth.fetch(this.origin+'/public/'+path)
         .then((result)=>{
 
@@ -113,22 +111,19 @@ class SolidFileSystem{
     	var mode = (typeof m !== "function")? m : {},
         callback = (typeof m !== "function")? cb : m;
         if(!path.endsWith("/"))path+="/";
-        console.log("mkdir "+path+" ");
         var n = path.indexOf("/");
+        var prevN = 0;
         while(n>0){
-            console.log("\t exists? "+path.substr(0,n+1));
         await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
         .then((result)=>{
-        console.log(n+" \t exists "+path.substr(0,n+1)+" "+result);
-        console.log(result);
         if(!result.ok && result.status===404){
-            console.log(path.substr(0,n+1)+" | "+path.substr(n+1, path.indexOf("/", n+1))+" |");
-        solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1), {
+            //console.log(path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
+        solid.auth.fetch(this.origin+'/public/'+path.substr(0,prevN+1), {
            method: 'POST',
            headers:{
                'Content-Type': 'text/turtle',
 	           'Link': '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
-               'Slug':  path.substr(n+1, path.indexOf("/", n+1))
+               'Slug':  path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))
 	         }
            }).then((res) => {return res;})
         .then((response) => {callback(null);})
@@ -137,6 +132,7 @@ class SolidFileSystem{
         }
         }).catch((error) => {
         });
+         prevN = n;
             n = path.indexOf("/", n+1);
             if(n===path.length)n=-1;
         }
@@ -153,7 +149,6 @@ class SolidFileSystem{
     async stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("stat "+path+" ");
         var leaf = this.leaf(this.origin+'/public/'+path);
       solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
           if(response.ok)return response.text();
