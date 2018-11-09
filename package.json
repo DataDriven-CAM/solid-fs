@@ -1,0 +1,13 @@
+{
+  "name": "solid-fs",
+  "version": "0.0.1",
+  "description": "client side functionality of the node fs API interfacing to a solid pod",
+  "main": "index.js",
+  "repository": "https://github.com/DataDriven-CAM/solid-fs.git",
+  "author": "roger <mathmldashx@yahoo.com>",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "cypress": "^3.1.1"
+  }
+}
