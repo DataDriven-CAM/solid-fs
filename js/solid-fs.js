@@ -6,9 +6,10 @@ class SolidFileSystem{
         this.origin = url.origin;
     }
 
-    readFile(path, op, cb){
+    async readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("readFile "+path+" ");
         solid.auth.fetch(this.origin+'/public/'+path, {
            method: 'GET',
            headers:{
@@ -49,60 +50,61 @@ class SolidFileSystem{
     }
 
     leaf(ns){
-                  var str = ns;
-                  var n = str.lastIndexOf("/");
-                  var end = str.length;
-                  if(n+1===str.length){end=n-1;n=str.lastIndexOf("/", n-1);}
-                  return (n>=0) ? str.substr(n+1, end-n) : str;
+      var str = ns;
+      var n = str.lastIndexOf("/");
+      var end = str.length;
+      if(n+1===str.length){end=n-1;n=str.lastIndexOf("/", n-1);}
+      return (n>=0) ? str.substr(n+1, end-n) : str;
     }
 
     branch(ns){
-                  var str = ns;
-                  var n = str.lastIndexOf("/");
-                  return (n>=0) ? str.substr(0, n+1) : str;
+      var str = ns;
+      var n = str.lastIndexOf("/");
+      return (n>=0) ? str.substr(0, n+1) : str;
     }
 
     async readdir(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+            console.log(path+" ");
         solid.auth.fetch(this.origin+'/public/'+path)
         .then((result)=>{
 
-if(result.ok){
-//console.log('path: '+path);
-//console.log('type: '+result.type);
-result.text().then((t)=>{
-var names = [];
-var entries = [];
-var parser = new N3.Parser();
-parser.parse(t, (error, quad, prefixes) => {
-    if (quad){
-        var quadJSON = quad.toJSON();
-	if(quadJSON.subject.value!='null'){
-                if(quadJSON.predicate.value.endsWith("#type") && quadJSON.object.value.endsWith("Resource") && !names.includes(quadJSON.subject.value)){
-                  if(options.withFileTypes)entries.push(new SolidFileSystem.Dirent(quadJSON.subject.value, true));
-                  else entries.push(quadJSON.subject.value);
-                  names.push(quadJSON.subject.value);
+            if(result.ok){
+            //console.log('path: '+path);
+            //console.log('type: '+result.type);
+            result.text().then((t)=>{
+            var names = [];
+            var entries = [];
+            var parser = new N3.Parser();
+            parser.parse(t, (error, quad, prefixes) => {
+                if (quad){
+                    var quadJSON = quad.toJSON();
+            	if(quadJSON.subject.value!='null'){
+                            if(quadJSON.predicate.value.endsWith("#type") && quadJSON.object.value.endsWith("Resource") && !names.includes(quadJSON.subject.value)){
+                              if(options.withFileTypes)entries.push(new SolidFileSystem.Dirent(quadJSON.subject.value, true));
+                              else entries.push(quadJSON.subject.value);
+                              names.push(quadJSON.subject.value);
+                            }
+                            else if(quadJSON.predicate.value.endsWith("#type") && quadJSON.object.value.endsWith("Container") && !names.includes(quadJSON.subject.value)){
+                              if(options.withFileTypes)entries.push(new SolidFileSystem.Dirent(quadJSON.subject.value, false));
+                              else entries.push(quadJSON.subject.value);
+                              names.push(quadJSON.subject.value);
+                            }
+                    }
                 }
-                else if(quadJSON.predicate.value.endsWith("#type") && quadJSON.object.value.endsWith("Container") && !names.includes(quadJSON.subject.value)){
-                  if(options.withFileTypes)entries.push(new SolidFileSystem.Dirent(quadJSON.subject.value, false));
-                  else entries.push(quadJSON.subject.value);
-                  names.push(quadJSON.subject.value);
+                else{
+                  //console.log("# That's all, folks!", prefixes);
+                  callback(null, entries);
                 }
-        }
-    }
-    else{
-      //console.log("# That's all, folks!", prefixes);
-      callback(null, entries);
-    }
-  });
-}).catch((e) => {console.error('Error:', JSON.stringify(e));
-        });
-  /*var fd = result.formData();
-  for(var p of fd){
-    console.log(fd[p]);
-  }*/
-}
+              });
+            }).catch((e) => {console.error('Error:', JSON.stringify(e));
+                    });
+              /*var fd = result.formData();
+              for(var p of fd){
+                console.log(fd[p]);
+              }*/
+            }
         }).catch((error) => {console.error('Error:', JSON.stringify(error));});
    
     }
@@ -110,19 +112,34 @@ parser.parse(t, (error, quad, prefixes) => {
     async mkdir(path, m, cb){
     	var mode = (typeof m !== "function")? m : {},
         callback = (typeof m !== "function")? cb : m;
-        var n=path.lastIndexOf('/');
-console.log(path.substr(n+1));
+        if(!path.endsWith("/"))path+="/";
+        console.log("mkdir "+path+" ");
+        var n = path.indexOf("/");
+        while(n>0){
+            console.log("\t exists? "+path.substr(0,n+1));
+        await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
+        .then((result)=>{
+        console.log(n+" \t exists "+path.substr(0,n+1)+" "+result);
+        console.log(result);
+        if(!result.ok && result.status===404){
+            console.log(path.substr(0,n+1)+" | "+path.substr(n+1, path.indexOf("/", n+1))+" |");
         solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1), {
            method: 'POST',
            headers:{
-            'Content-Type': 'text/turtle',
-	    'Link': '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
-            'Slug':  path.substr(n+1)
-	   }
+               'Content-Type': 'text/turtle',
+	           'Link': '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
+               'Slug':  path.substr(n+1, path.indexOf("/", n+1))
+	         }
            }).then((res) => {return res;})
         .then((response) => {callback(null);})
         .catch((error) => {callback('Error: '+JSON.stringify(error));});
-
+            
+        }
+        }).catch((error) => {
+        });
+            n = path.indexOf("/", n+1);
+            if(n===path.length)n=-1;
+        }
     }
 
     async rmdir(path, callback){
@@ -136,50 +153,54 @@ console.log(path.substr(n+1));
     async stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("stat "+path+" ");
         var leaf = this.leaf(this.origin+'/public/'+path);
       solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
           if(response.ok)return response.text();
           else callback("Status: "+response.status+" "+response.statusText+" for "+path, null);
           }).then((t)=>{
-        var stat=new SolidFileSystem.Stats(leaf, true);
-var parser = new N3.Parser();
-parser.parse(t, (error, quad, prefixes) => {
-    if (quad){
-        var quadJSON = quad.toJSON();
-	if(quadJSON.subject.value!='null'){
-                if(quadJSON.subject.value.startsWith("undefined"))quadJSON.subject.value=quadJSON.subject.value.substr(9);
-                if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#mtime")){
-                   stat.mtime = quadJSON.object.value;
+            var stat=new SolidFileSystem.Stats(leaf, true);
+            var parser = new N3.Parser();
+            parser.parse(t, (error, quad, prefixes) => {
+                if (quad){
+                    var quadJSON = quad.toJSON();
+            	if(quadJSON.subject.value!='null'){
+                            if(quadJSON.subject.value.startsWith("undefined"))quadJSON.subject.value=quadJSON.subject.value.substr(9);
+                            if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#mtime")){
+                               stat.mtime = quadJSON.object.value;
+                            }
+                            else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#size")){
+                               stat.size = quadJSON.object.value;
+                            }
+                            else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("modified")){
+                               stat.modified = quadJSON.object.value;
+                            }
+                    }
                 }
-                else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#size")){
-                   stat.size = quadJSON.object.value;
+                else{
+                  //console.log("# That's all, folks!", prefixes);
+                  callback(null, stat);
                 }
-                else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("modified")){
-                   stat.modified = quadJSON.object.value;
-                }
-        }
-    }
-    else{
-      //console.log("# That's all, folks!", prefixes);
-      callback(null, stat);
-    }
-  });
+              });
           }).catch((error) => {callback('Error: '+JSON.stringify(error), null);});
     }
 
-    lstat(path, op, cb){
+    async lstat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("lstat "+path+" ");
     }
 
-    readlink(path, op, cb){
+    async readlink(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("readlink "+path+" ");
     }
     async symlink(target, path, t, cb){
     	var type = (typeof t !== "function")? t : {},
         callback = (typeof t !== "function")? cb : t;
         var n=path.lastIndexOf('/');
+        console.log("symlink "+path+" ");
         solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1), {
            method: 'PUT', // or 'PUT'
            headers:{
@@ -202,13 +223,14 @@ SolidFileSystem.Dirent = class {
       this.file = isFile;
     }
 
-isBlockDevice(){return false;}
-isCharacterDevice(){return true;}
-isDirectory(){return this.directory;}
-isFIFO(){return false;}
-isFile(){return this.file;}
-isSocket(){return false;}
-isSymbolicLink(){return false;}
+    isBlockDevice(){return false;}
+    isCharacterDevice(){return true;}
+    isDirectory(){return this.directory;}
+    isFIFO(){return false;}
+    isFile(){return this.file;}
+    isSocket(){return false;}
+    isSymbolicLink(){return false;}
+    
 }
 
 SolidFileSystem.Stats = class {
@@ -218,12 +240,13 @@ SolidFileSystem.Stats = class {
       this.file = isFile;
     }
 
-isBlockDevice(){return false;}
-isCharacterDevice(){return true;}
-isDirectory(){return this.directory;}
-isFIFO(){return false;}
-isFile(){return this.file;}
-isSocket(){return false;}
-isSymbolicLink(){return false;}
+    isBlockDevice(){return false;}
+    isCharacterDevice(){return true;}
+    isDirectory(){return this.directory;}
+    isFIFO(){return false;}
+    isFile(){return this.file;}
+    isSocket(){return false;}
+    isSymbolicLink(){return false;}
+    
 }
 
