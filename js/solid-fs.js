@@ -28,6 +28,15 @@ class SolidFileSystem{
     async writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("write"+file);
+        var n=file.lastIndexOf("/");
+        if(n=>0){
+            var path=this.branch(file);
+            console.log(path);
+            await this.mkdir(path, (err) =>{
+                console.log(err);
+            });
+        }
         solid.auth.fetch(this.origin+'/public/'+file, {
            method: 'PUT', // or 'PUT'
            headers:{
@@ -112,12 +121,15 @@ class SolidFileSystem{
         callback = (typeof m !== "function")? cb : m;
         if(!path.endsWith("/"))path+="/";
         var n = path.indexOf("/");
-        var prevN = 0;
+        var prevN = -1;
         while(n>0){
+            console.log(this.origin+'/public/'+path.substr(0,n+1));
         await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
         .then((result)=>{
-        if(!result.ok && result.status===404){
-            //console.log(path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
+            console.log(result.ok);
+            console.log(result.status);
+        if(!result.ok && (result.status===401 || result.status===404)){
+            console.log(prevN+" "+this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
         solid.auth.fetch(this.origin+'/public/'+path.substr(0,prevN+1), {
            method: 'POST',
            headers:{
@@ -126,13 +138,18 @@ class SolidFileSystem{
                'Slug':  path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))
 	         }
            }).then((res) => {return res;})
-        .then((response) => {callback(null);})
+        .then((response) => {
+            if(!response.ok){
+            console.log(response.ok);
+            console.log(response.status);
+                
+            }
+            callback(null);})
         .catch((error) => {callback('Error: '+JSON.stringify(error));});
             
         }
         }).catch((error) => {
         });
-         prevN = n;
             n = path.indexOf("/", n+1);
             if(n===path.length)n=-1;
         }
