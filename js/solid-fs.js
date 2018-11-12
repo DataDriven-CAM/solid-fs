@@ -81,6 +81,7 @@ class SolidFileSystem{
             //console.log('path: '+path);
             //console.log('type: '+result.type);
             result.text().then((t)=>{
+                console.log("t="+t)
             var names = [];
             var entries = [];
             var parser = new N3.Parser();
@@ -88,6 +89,8 @@ class SolidFileSystem{
                 if (quad){
                     var quadJSON = quad.toJSON();
             	if(quadJSON.subject.value!='null'){
+                            if(quadJSON.subject.value.startsWith("undefined"))quadJSON.subject.value=quadJSON.subject.value.substr(9);
+                            if(quadJSON.subject.value.startsWith("null"))quadJSON.subject.value=quadJSON.subject.value.substr(4);
                             if(quadJSON.predicate.value.endsWith("#type") && quadJSON.object.value.endsWith("Resource") && !names.includes(quadJSON.subject.value)){
                               if(options.withFileTypes)entries.push(new SolidFileSystem.Dirent(quadJSON.subject.value, true));
                               else entries.push(quadJSON.subject.value);
@@ -150,6 +153,7 @@ class SolidFileSystem{
         }
         }).catch((error) => {
         });
+            prevN = n;
             n = path.indexOf("/", n+1);
             if(n===path.length)n=-1;
         }
