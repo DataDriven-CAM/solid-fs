@@ -1,7 +1,13 @@
 class SolidFileSystem{
 
-    constructor(webId){
-        this.webId=webId;
+    constructor(webId, trunk){
+        this.webId = webId;
+        
+        this.trunk = (typeof trunk ==='undefined') ? '/public/' : trunk;
+        if(this.trunk.length>0){
+            if(!this.trunk.startsWith('/'))trunk='/'+this.trunk;
+            if(!this.trunk.endsWith('/'))this.trunk+='/';
+        }
         var url = new URL(`${this.webId}`);
         this.origin = url.origin;
     }
@@ -9,8 +15,8 @@ class SolidFileSystem{
     readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("read "+this.origin+'/public/'+path);
-        solid.auth.fetch(this.origin+'/public/'+path, {
+        console.log("read "+this.origin+this.trunk+path);
+        solid.auth.fetch(this.origin+this.trunk+path, {
            method: 'GET',
            headers:{
 	    'Accept': 'Authorization, Origin, text/*, application/x-binary'
@@ -41,7 +47,7 @@ class SolidFileSystem{
     writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log(this.origin+'/public/'+" write: "+file+" "+(typeof data));
+        console.log(this.origin+this.trunk+" write: "+file+" "+(typeof data));
         var contentType = (typeof data ==="string") ? 'text/plain': 'application/x-binary';
         var n=file.lastIndexOf("/");
         var _this = this;
@@ -56,7 +62,7 @@ class SolidFileSystem{
             };
             f();
         }
-        solid.auth.fetch(this.origin+'/public/'+file, {
+        solid.auth.fetch(this.origin+this.trunk+file, {
            method: 'PUT', // or 'PUT'
            headers:{
 	    'Content-Type': contentType,
@@ -69,7 +75,7 @@ class SolidFileSystem{
     }
 
     unlink(path, callback){
-      solid.auth.fetch(this.origin+'/public/'+path, {
+      solid.auth.fetch(this.origin+this.trunk+path, {
         method: 'DELETE'
       }).then(res => {return res;})
       .then((response) => {callback(null);})
@@ -93,7 +99,7 @@ class SolidFileSystem{
     readdir(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        solid.auth.fetch(this.origin+'/public/'+path)
+        solid.auth.fetch(this.origin+this.trunk+path)
         .then((result)=>{
 
             if(result.ok){
@@ -146,11 +152,11 @@ class SolidFileSystem{
         var _this = this;
         while(n>0){
             async function f(){
-        await solid.auth.fetch(_this.origin+'/public/'+path.substr(0,n+1))
+        await solid.auth.fetch(_this.origin+_this.trunk+path.substr(0,n+1))
         .then((result)=>{
         if(!result.ok && (result.status===401 || result.status===404)){
-            //console.log(prevN+" "+_this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
-        solid.auth.fetch(_this.origin+'/public/'+path.substr(0,prevN+1), {
+            //console.log(prevN+" "+_this.origin+_this.trunk+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
+        solid.auth.fetch(_this.origin+_this.trunk+path.substr(0,prevN+1), {
            method: 'POST',
            headers:{
                'Content-Type': 'text/turtle',
@@ -179,7 +185,7 @@ class SolidFileSystem{
     }
 
     rmdir(path, callback){
-      solid.auth.fetch(this.origin+'/public/'+path, {
+      solid.auth.fetch(this.origin+this.trunk+path, {
         method: 'DELETE'
       }).then(res => {return res;})
       .then((response) => {callback(null);})
@@ -189,10 +195,10 @@ class SolidFileSystem{
     stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("stat "+this.origin+'/public/'+path);
+        console.log("stat "+this.origin+this.trunk+path);
         console.log(options);
-        var leaf = this.leaf(this.origin+'/public/'+path);
-      solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
+        var leaf = this.leaf(this.origin+this.trunk+path);
+      solid.auth.fetch(this.branch(this.origin+this.trunk+path)).then((response) => {
           if(response.ok)return response.text();
           else {var err=new Error(response.statusText); err.code='ENOENT';
               if(typeof callback === "function")callback(err, null);}
@@ -258,11 +264,11 @@ class SolidFileSystem{
         callback = (typeof t !== "function")? cb : t;
         var n=path.lastIndexOf('/');
         console.log("symlink "+path+" ");
-        solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1), {
+        solid.auth.fetch(this.origin+this.trunk+path.substr(0,n+1), {
            method: 'PUT', // or 'PUT'
            headers:{
             'Content-Type': 'text/turtle',
-            'Location': this.origin+'/public/'+this.branch(target),
+            'Location': this.origin+this.trunk+this.branch(target),
 	    'Link': '<http://www.w3.org/ns/ldp#Resource>; rel="type"'
 	   }
            }).then((res) => {return res;})
