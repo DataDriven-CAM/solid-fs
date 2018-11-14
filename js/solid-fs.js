@@ -6,9 +6,10 @@ class SolidFileSystem{
         this.origin = url.origin;
     }
 
-    async readFile(path, op, cb){
+    readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("read "+this.origin+'/public/'+path);
         solid.auth.fetch(this.origin+'/public/'+path, {
            method: 'GET',
            headers:{
@@ -25,19 +26,19 @@ class SolidFileSystem{
         }).catch((error) => {console.error('Error:', error);});
     }
 
-    async appendFile(file, data, op, cb){
+    appendFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log("appendFile "+file+" ");
     }
 
-    async copyFile(src, dest, fgs, cb){
+    copyFile(src, dest, fgs, cb){
     	var flags = (typeof fgs !== "function")? fgs : {},
         callback = (typeof fgs !== "function")? cb : fgs;
         console.log("copyFile "+src+" "+dest);
     }
 
-    async writeFile(file, data, op, cb){
+    writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log(this.origin+'/public/'+" write: "+file+" "+(typeof data));
@@ -45,8 +46,14 @@ class SolidFileSystem{
         var n=file.lastIndexOf("/");
         if(n=>0){
             var path=this.branch(file);
-            await this.mkdir(path, (err) =>{
+            async function f(){
+            var p = new Promise((resolve, reject) => {
+            this.mkdir(path, (err) =>{
             });
+            }).then((res) => { }).catch(() => { });
+            await p;
+            };
+            f();
         }
         solid.auth.fetch(this.origin+'/public/'+file, {
            method: 'PUT', // or 'PUT'
@@ -60,7 +67,7 @@ class SolidFileSystem{
         .catch((error) => {callback('Error: '+JSON.stringify(error));});
     }
 
-    async unlink(path, callback){
+    unlink(path, callback){
       solid.auth.fetch(this.origin+'/public/'+path, {
         method: 'DELETE'
       }).then(res => {return res;})
@@ -82,7 +89,7 @@ class SolidFileSystem{
       return (n>=0) ? str.substr(0, n+1) : str;
     }
 
-    async readdir(path, op, cb){
+    readdir(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         solid.auth.fetch(this.origin+'/public/'+path)
@@ -129,13 +136,14 @@ class SolidFileSystem{
    
     }
 
-    async mkdir(path, m, cb){
+    mkdir(path, m, cb){
     	var mode = (typeof m !== "function")? m : {},
         callback = (typeof m !== "function")? cb : m;
         if(!path.endsWith("/"))path+="/";
         var n = path.indexOf("/");
         var prevN = -1;
         while(n>0){
+            async function f(){
         await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
         .then((result)=>{
         if(!result.ok && (result.status===401 || result.status===404)){
@@ -160,13 +168,15 @@ class SolidFileSystem{
         }
         }).catch((error) => {
         });
+            };
+            f();
             prevN = n;
             n = path.indexOf("/", n+1);
             if(n===path.length)n=-1;
         }
     }
 
-    async rmdir(path, callback){
+    rmdir(path, callback){
       solid.auth.fetch(this.origin+'/public/'+path, {
         method: 'DELETE'
       }).then(res => {return res;})
@@ -230,18 +240,18 @@ class SolidFileSystem{
               if(typeof callback === "function")callback(error, null);});
     }
 
-    async lstat(path, op, cb){
+    lstat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log("lstat "+path+" ");
     }
 
-    async readlink(path, op, cb){
+    readlink(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log("readlink "+path+" ");
     }
-    async symlink(target, path, t, cb){
+    symlink(target, path, t, cb){
     	var type = (typeof t !== "function")? t : {},
         callback = (typeof t !== "function")? cb : t;
         var n=path.lastIndexOf('/');
