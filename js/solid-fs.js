@@ -40,7 +40,8 @@ class SolidFileSystem{
     async writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log(this.origin+'/public/'+" write: "+file);
+        console.log(this.origin+'/public/'+" write: "+file+" "+(typeof data));
+        var contentType = (typeof data ==="string") ? 'text/plain': 'application/x-binary';
         var n=file.lastIndexOf("/");
         if(n=>0){
             var path=this.branch(file);
@@ -50,7 +51,7 @@ class SolidFileSystem{
         solid.auth.fetch(this.origin+'/public/'+file, {
            method: 'PUT', // or 'PUT'
            headers:{
-	    'Content-Type': 'text/plain',
+	    'Content-Type': contentType,
             'Content-Length': data.length.toString()
 	   },
            body: data // data can be `string` or {object}!
@@ -179,11 +180,13 @@ class SolidFileSystem{
         console.log("stat "+this.origin+'/public/'+path);
         console.log(options);
         var leaf = this.leaf(this.origin+'/public/'+path);
-      solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
+      await solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
           if(response.ok)return response.text();
-          else callback(new Error(response.statusText), null);
+          else {var err=new Error(response.statusText); err.code='ENOENT';
+              if(typeof callback !== 'undefined')callback(err, null);}
           }).then((t)=>{
             var stat=new SolidFileSystem.Stats(leaf, true);
+            var exists = false;
             var parser = new N3.Parser();
             parser.parse(t, (error, quad, prefixes) => {
                 if (quad){
@@ -191,6 +194,7 @@ class SolidFileSystem{
             	if(quadJSON.subject.value!='null'){
                             if(quadJSON.subject.value.startsWith("undefined"))quadJSON.subject.value=quadJSON.subject.value.substr(9);
                             if(quadJSON.subject.value.startsWith("null"))quadJSON.subject.value=quadJSON.subject.value.substr(4);
+                            if(quadJSON.subject.value===leaf)exists=true;
                             if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#mtime")){
                                stat.mtime = quadJSON.object.value;
                             }
@@ -200,6 +204,10 @@ class SolidFileSystem{
                             else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("modified")){
                                stat.modified = quadJSON.object.value;
                             }
+                            else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#type")){
+                                console.log(quadJSON.predicate.value+" "+quadJSON.object.value);
+                               //stat.modified = quadJSON.object.value;
+                            }
                             else  if(quadJSON.subject.value===leaf){
                                 console.log(quadJSON.predicate.value);
                             }
@@ -207,10 +215,19 @@ class SolidFileSystem{
                 }
                 else{
                   //console.log("# That's all, folks!", prefixes);
-                  callback(null, stat);
+                  if(exists){
+                      if(typeof callback !== "undefined")callback(null, stat);
+                  }
+                  else {
+                          var err=new Error("Does not exist");
+                          err.code='ENOENT';
+                          if(typeof callback !== "undefined")callback(err, null);
+                  }
                 }
               });
-          }).catch((error) => {callback(new Error(JSON.stringify(error)), null);});
+          }).catch((error) => {
+              console.log(JSON.stringify(error));
+              if(typeof callback !== "undefined")callback(error, null);});
     }
 
     async lstat(path, op, cb){
