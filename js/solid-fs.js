@@ -174,16 +174,16 @@ class SolidFileSystem{
       .catch(error => callback('Error: '+JSON.stringify(error)));
     }
 
-    async stat(path, op, cb){
+    stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log("stat "+this.origin+'/public/'+path);
         console.log(options);
         var leaf = this.leaf(this.origin+'/public/'+path);
-      await solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
+      solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
           if(response.ok)return response.text();
           else {var err=new Error(response.statusText); err.code='ENOENT';
-              if(typeof callback !== 'undefined')callback(err, null);}
+              if(typeof callback === "function")callback(err, null);}
           }).then((t)=>{
             var stat=new SolidFileSystem.Stats(leaf, true);
             var exists = false;
@@ -216,18 +216,18 @@ class SolidFileSystem{
                 else{
                   //console.log("# That's all, folks!", prefixes);
                   if(exists){
-                      if(typeof callback !== "undefined")callback(null, stat);
+                      if(typeof callback === "function")callback(null, stat);
                   }
                   else {
                           var err=new Error("Does not exist");
                           err.code='ENOENT';
-                          if(typeof callback !== "undefined")callback(err, null);
+                          if(typeof callback === "function")callback(err, null);
                   }
                 }
               });
           }).catch((error) => {
               console.log(JSON.stringify(error));
-              if(typeof callback !== "undefined")callback(error, null);});
+              if(typeof callback === "function")callback(error, null);});
     }
 
     async lstat(path, op, cb){
