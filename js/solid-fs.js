@@ -13,7 +13,7 @@ class SolidFileSystem{
         solid.auth.fetch(this.origin+'/public/'+path, {
            method: 'GET',
            headers:{
-	    'Accept': 'Authorization, Origin, text/*'
+	    'Accept': 'Authorization, Origin, text/*, application/x-binary'
 	   }
         }).then((result)=>{
           if(result.ok){
@@ -44,11 +44,12 @@ class SolidFileSystem{
         console.log(this.origin+'/public/'+" write: "+file+" "+(typeof data));
         var contentType = (typeof data ==="string") ? 'text/plain': 'application/x-binary';
         var n=file.lastIndexOf("/");
+        var _this = this;
         if(n=>0){
             var path=this.branch(file);
             async function f(){
             var p = new Promise((resolve, reject) => {
-            this.mkdir(path, (err) =>{
+            _this.mkdir(path, (err) =>{
             });
             }).then((res) => { }).catch(() => { });
             await p;
@@ -142,13 +143,14 @@ class SolidFileSystem{
         if(!path.endsWith("/"))path+="/";
         var n = path.indexOf("/");
         var prevN = -1;
+        var _this = this;
         while(n>0){
             async function f(){
-        await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
+        await solid.auth.fetch(_this.origin+'/public/'+path.substr(0,n+1))
         .then((result)=>{
         if(!result.ok && (result.status===401 || result.status===404)){
-            //console.log(prevN+" "+this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
-        solid.auth.fetch(this.origin+'/public/'+path.substr(0,prevN+1), {
+            //console.log(prevN+" "+_this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
+        solid.auth.fetch(_this.origin+'/public/'+path.substr(0,prevN+1), {
            method: 'POST',
            headers:{
                'Content-Type': 'text/turtle',
