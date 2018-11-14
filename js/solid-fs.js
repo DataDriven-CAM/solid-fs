@@ -25,16 +25,26 @@ class SolidFileSystem{
         }).catch((error) => {console.error('Error:', error);});
     }
 
+    async appendFile(file, data, op, cb){
+    	var options = (typeof op !== "function")? op : {},
+        callback = (typeof op !== "function")? cb : op;
+        console.log("appendFile "+file+" ");
+    }
+
+    async copyFile(src, dest, fgs, cb){
+    	var flags = (typeof fgs !== "function")? fgs : {},
+        callback = (typeof fgs !== "function")? cb : fgs;
+        console.log("copyFile "+src+" "+dest);
+    }
+
     async writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("write"+file);
+        console.log(this.origin+'/public/'+" write: "+file);
         var n=file.lastIndexOf("/");
         if(n=>0){
             var path=this.branch(file);
-            console.log(path);
             await this.mkdir(path, (err) =>{
-                console.log(err);
             });
         }
         solid.auth.fetch(this.origin+'/public/'+file, {
@@ -81,7 +91,6 @@ class SolidFileSystem{
             //console.log('path: '+path);
             //console.log('type: '+result.type);
             result.text().then((t)=>{
-                console.log("t="+t)
             var names = [];
             var entries = [];
             var parser = new N3.Parser();
@@ -126,13 +135,10 @@ class SolidFileSystem{
         var n = path.indexOf("/");
         var prevN = -1;
         while(n>0){
-            console.log(this.origin+'/public/'+path.substr(0,n+1));
         await solid.auth.fetch(this.origin+'/public/'+path.substr(0,n+1))
         .then((result)=>{
-            console.log(result.ok);
-            console.log(result.status);
         if(!result.ok && (result.status===401 || result.status===404)){
-            console.log(prevN+" "+this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
+            //console.log(prevN+" "+this.origin+'/public/'+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
         solid.auth.fetch(this.origin+'/public/'+path.substr(0,prevN+1), {
            method: 'POST',
            headers:{
@@ -170,10 +176,12 @@ class SolidFileSystem{
     async stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
+        console.log("stat "+this.origin+'/public/'+path);
+        console.log(options);
         var leaf = this.leaf(this.origin+'/public/'+path);
       solid.auth.fetch(this.branch(this.origin+'/public/'+path)).then((response) => {
           if(response.ok)return response.text();
-          else callback("Status: "+response.status+" "+response.statusText+" for "+path, null);
+          else callback(new Error(response.statusText), null);
           }).then((t)=>{
             var stat=new SolidFileSystem.Stats(leaf, true);
             var parser = new N3.Parser();
@@ -182,6 +190,7 @@ class SolidFileSystem{
                     var quadJSON = quad.toJSON();
             	if(quadJSON.subject.value!='null'){
                             if(quadJSON.subject.value.startsWith("undefined"))quadJSON.subject.value=quadJSON.subject.value.substr(9);
+                            if(quadJSON.subject.value.startsWith("null"))quadJSON.subject.value=quadJSON.subject.value.substr(4);
                             if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#mtime")){
                                stat.mtime = quadJSON.object.value;
                             }
@@ -191,6 +200,9 @@ class SolidFileSystem{
                             else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("modified")){
                                stat.modified = quadJSON.object.value;
                             }
+                            else  if(quadJSON.subject.value===leaf){
+                                console.log(quadJSON.predicate.value);
+                            }
                     }
                 }
                 else{
@@ -198,7 +210,7 @@ class SolidFileSystem{
                   callback(null, stat);
                 }
               });
-          }).catch((error) => {callback('Error: '+JSON.stringify(error), null);});
+          }).catch((error) => {callback(new Error(JSON.stringify(error)), null);});
     }
 
     async lstat(path, op, cb){
