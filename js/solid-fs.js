@@ -19,7 +19,7 @@ class SolidFileSystem{
         solid.auth.fetch(this.origin+this.trunk+path, {
            method: 'GET',
            headers:{
-	    'Accept': 'Authorization, Origin, text/*, application/x-binary'
+	    'Accept': 'Authorization, Origin, text/*, application/octet-stream'
 	   }
         }).then((result)=>{
           if(result.ok){
@@ -42,13 +42,25 @@ class SolidFileSystem{
     	var flags = (typeof fgs !== "function")? fgs : {},
         callback = (typeof fgs !== "function")? cb : fgs;
         console.log("copyFile "+src+" "+dest);
+        this.readFile(src, (err, data)=>{
+        if(err===null){
+          this.writeFile(dest, data, (err)=>{
+            if(err!=null){
+              callback(err);
+            }
+            else callback(null);
+          });
+    
+        }
+        else callback(err);
+      });
     }
 
     writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log(this.origin+this.trunk+" write: "+file+" "+(typeof data));
-        var contentType = (typeof data ==="string") ? 'text/plain': 'application/x-binary';
+        var contentType = (typeof data ==="string") ? 'text/plain': 'application/octet-stream';
         var n=file.lastIndexOf("/");
         var _this = this;
         if(n=>0){
@@ -168,9 +180,10 @@ class SolidFileSystem{
             if(!response.ok){
             console.log(response.ok);
             console.log(response.status);
-                
-            }
-            callback(null);})
+                callback(response.statusText);
+            } else callback(null);
+            
+        })
         .catch((error) => {callback('Error: '+JSON.stringify(error));});
             
         }
@@ -206,6 +219,7 @@ class SolidFileSystem{
             var stat=new SolidFileSystem.Stats(leaf, true);
             var exists = false;
             var parser = new N3.Parser();
+            console.log(t);
             parser.parse(t, (error, quad, prefixes) => {
                 if (quad){
                     var quadJSON = quad.toJSON();
