@@ -10,8 +10,27 @@ class SolidFileSystem{
         }
         var url = new URL(`${this.webId}`);
         this.origin = url.origin;
+        this.constants=Object.freeze({
+                                "F_OK":1,
+                                "R_OK":2,
+                                "W_OK":4,
+                                "X_OK": 8
+                            });
     }
 
+    access(path, m, cb){
+    	var mode = (typeof m !== "function")? m : this.constants.F_OK,
+        callback = (typeof m !== "function")? cb : m;
+      solid.auth.fetch(this.origin+this.trunk+path, {
+        method: 'OPTIONS'
+      }).then(res => {return res;})
+      .then((response) => {
+          if(!response.ok && (response.status===404)){var err=new Error("Doesn't exist");err.code='ENOENT'; callback(err);};
+          console.log(response);
+      })
+      .catch((error) => {var err=new Error("");callback(err);});
+    }
+    
     readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
@@ -19,7 +38,7 @@ class SolidFileSystem{
         solid.auth.fetch(this.origin+this.trunk+path, {
            method: 'GET',
            headers:{
-	    'Accept': 'Authorization, Origin, text/*, application/octet-stream'
+	    'Accept': 'Authorization, Origin, text/*, image/*, application/octet-stream'
 	   }
         }).then((result)=>{
           if(result.ok){

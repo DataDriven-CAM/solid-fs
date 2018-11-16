@@ -1,7 +1,7 @@
 # solid-fs
 client side functionality of the node fs API interfacing to a solid pod
 
-Header scripts
+###Header scripts
 ```
   <script type="text/javascript" src="js/bundle.umd.min.js"></script>
   <script type="text/javascript" src="js/solid-auth-client.bundle.js"></script>
@@ -10,7 +10,7 @@ Header scripts
 
 ```
 
-Pass webId to the SolidFileSystem
+###Pass webId to the SolidFileSystem
 ```
 async function login(idp) {
   const session = await solid.auth.currentSession();
@@ -38,3 +38,20 @@ or to be right at the root
 ```
 window.fs = new SolidFileSystem(session.webId, '');
 ```
+
+###Progress
+
+
+* fs.readFile(path[, options], callback) : any text
+* fs.writeFile(file, data[, options], callback) : any text
+* fs.unlink(path, callback)  : any hard link
+* fs.readdir(path[, options], callback) : returns array of Dirent's
+* fs.mkdir(path[, mode], callback) : creates an empty container
+* fs.rmdir(path, callback)  : deletes container, untested when there is deeper folders
+* fs.stat(path[, options], callback) : retrieves what's known about a file at this time
+* fs.lstat(path[, options], callback) : not implemented
+* fs.readlink(path[, options], callback) : not implemented
+* fs.symlink(target, path[, type], callback) : not implemented
+
+The two major challenges are symlink emulation and mapping to Content-Type and getting 
+them writen and retrieved without modification
