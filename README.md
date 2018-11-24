@@ -55,3 +55,16 @@ window.fs = new SolidFileSystem(session.webId, '');
 
 The two major challenges are symlink emulation and mapping to binary Content-Type and getting 
 them written and retrieved without modification
+
+### Testing 
+The testing framework is cypress https://www.cypress.io/.
+
+Currently use gulp to move some dependencies in for testing from 4 sibling working copies: [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git), 
+[solid-auth-client](https://github.com/solid/solid-auth-client), [rdflib.js](https://github.com/linkeddata/rdflib.js) and [N3.js](https://github.com/rdfjs/N3.js).
+
+Currently need a node-solid-server standing up on localhost 8443 before running yarn test.
+
+```
+yarn test
+```
+
