@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repository interface</title>
+  <script type="text/javascript" src="js/bundle.umd.min.js"></script>
+  <!--script src="https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"></script-->
+  <script type="text/javascript" src="js/rdflib.min.js"></script>
+  <script type="text/javascript" src="js/solid-auth-client.bundle.js"></script>
+  <script type="text/javascript" src="js/N3.bundle.js"></script>
+  <script type="text/javascript" src="js/solid-fs.js"></script>
+
+</head>
+<body>
+    <div id="pane">
+      <div id="repository">
+        <script type="text/javascript">
+window.dir = 'tmp/solid-fs'
+console.log(dir);
+          function cloneRepository(event){
+git.clone({
+    dir: window.dir,
+    corsProxy: 'https://cors.isomorphic-git.org',
+    url: 'https://github.com/DataDriven-CAM/solid-fs.git',
+    singleBranch: true,
+    depth: 3
+}).then((response)=>{
+console.log('really done')
+var treeObj = {'core': {
+      'data' : [
+        { "text" : "solid-git", "state" : {"opened" : true }, "children" : []}]}};
+//for(var entry in v){
+//  treeObj.core.data[0].children.push({"text": v[entry]});
+////  console.log(v[entry]);
+//}
+//console.log(JSON.stringify(treeObj));
+$(function() {
+  $('#fstree').jstree( treeObj);
+});
+  
+}).catch((err) =>{
+  console.log(err);
+  console.log("err "+err);
+
+}); 
+/*git.fetch({
+  dir: window.dir,
+  corsProxy: 'https://cors.isomorphic-git.org',
+  url: 'https://github.com/DataDriven-CAM/scad-poser.git',
+  ref: 'master',
+  depth: 1,
+  singleBranch: true,
+  tags: false
+})*/
+console.log('done')
+          }
+          
+          function readSomething(event){
+            var value = document.getElementById("resource").value;
+            if(value.endsWith("/") || value.endsWith("*")){
+window.fs.readdir(value, {withFileTypes: true}, (err, files)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else{
+// Make a container element for the list
+    var listContainer = document.createElement('div');
+    listContainer.id="solid-headers";
+    // Add it to the page
+    if(document.getElementById("solid-headers")===null)
+    document.getElementsByTagName('body')[0].appendChild(listContainer);
+    else 
+    document.getElementsByTagName('body')[0].replaceChild(listContainer, document.getElementById("solid-headers"));
+    // Make the list
+    var listElement = document.createElement('ul');
+
+    // Add it to the page
+    listContainer.appendChild(listElement);
+files.forEach((head) => {
+  var listItem = document.createElement('li');
+listItem.innerHTML = head.name +" "+head.isFile()+" ";
+listElement.appendChild(listItem);
+});
+    }
+  });              
+            }
+            else{
+window.fs.readFile(value, (err, data)=>{
+    if(err===null){
+    document.getElementById("advanced").value=data;
+
+    }
+    else console.log(err);
+  });    
+            }
+          }
+          
+          function statSomething(event){
+            try{
+fs.stat(document.getElementById("resource").value, (err, stat)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else console.log(stat);
+  });
+            }
+            catch(ex){
+              console.log(ex);
+            }
+          }
+          
+          function deleteSomething(event){
+fs.unlink(document.getElementById("resource").value, (err)=>{
+    if(err!=null){
+    console.log(err);
+    }
+  });
+          }
+          function writeSomething(event){
+  var data = "bearingd=150;\
+bearingd1=214;\
+bearingD=240;\
+bearingH=40;\
+bearingH1=26;\
+bearingC=12;\
+bearingJ=165;\
+bearingJ1=225;\
+bearingN2=7;\
+\
+module primaryDisk() {\
+goniometerHeight=40+14;\
+goniometerRadius=bearingd1/2;\
+goniometerThickness=50;\
+color([224/255, 223/255, 219/255]) difference() {difference() {difference() {\
+cylinder(h=goniometerHeight, r1=goniometerRadius+goniometerThickness, r2=goniometerRadius+goniometerThickness, $fa=1, center=false);\
+translate(v = [0,0,-1]) cylinder(h=goniometerHeight+20, r1=goniometerRadius, r2=goniometerRadius, $fa=1, center=false);\
+}\
+\
+\
+translate(v = [0,0,-1])cylinder(h=bearingH1+1, r1=bearingD/2, r2=bearingD/2, $fa=1, center=false);\
+}\
+\
+//translate(v = [0,0,bearingH1-1])make_ring_of(radius = bearingJ1/2, count = 1)metric_thread (bearingN2, 1.5, bearingH-bearingH1+2, internal=true);\
+translate(v = [0,0,bearingH1-1])make_ring_of(radius = bearingJ1/2, count = 33)@CamTable(n=3)cylinder(h=bearingH-bearingH1+20, r1=bearingN2/2, r2=bearingN2/2, $fa=1, center=false);\
+}\
+\
+}\
+\
+module make_ring_of(radius, count)\
+{\
+    for (a = [0 : count - 1]) {\
+        angle = a * 360 / count;\
+        translate(radius * [sin(angle), -cos(angle), 0])\
+            rotate([0, 0, angle])\
+                children();\
+    }\
+}\
+\
+primaryDisk();\
+//import(\"P-541.ZCD.STEP\");\
+";
+fs.writeFile(document.getElementById("resource").value, data, (err)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else console.log("wrote");
+  });
+          }
+          
+          function profileSomething(event){
+            try{
+              var trunk = fs.trunk;
+              fs.trunk = '/profile/';
+              fs.readdir(document.getElementById("resource").value, {withFileTypes: true}, (err, files)=>{
+                  if(err!=null){
+                  console.log(err);
+                  }
+                  else console.log(files);
+                  fs.trunk = trunk
+                });
+            }
+            catch(ex){
+              console.log(ex);
+            }
+          }
+          
+          function cardSomething(event){
+            try{
+              var trunk = fs.trunk;
+              fs.trunk = '/profile/';
+              fs.readFile(document.getElementById("resource").value, (err, data)=>{
+                  if(err!=null){
+                  console.log(err);
+                  }
+                  else console.log(data);
+                  fs.trunk = trunk
+                });
+            }
+            catch(ex){
+              console.log(ex);
+            }
+          }
+          
+        </script>
+          <section title="Connect...">
+                  <input type="text" name="" value="https://github.com/DataDriven-CAM/solid-fs.git"/>
+                  <input type="submit" value="Submit" onclick="cloneRepository(this.event)"/>
+                  <input id="fullName" type="text" name=""/>
+          </section>
+          <section title="Connect...">
+                  <input type="text" name="" id="resource" value="scad/primary-disk.scad"/>
+                  <input type="submit" name="Get" id="get" value="Get" onclick="readSomething(this.event)"/>
+                  <input type="submit" id="delete" value="Delete" onclick="deleteSomething(this.event)"/>
+                  <input type="submit" id="write" value="Write" onclick="writeSomething(this.event)"/>
+                  <input type="submit" id="stat" value="Stat" onclick="statSomething(this.event)"/>
+                  <label for="advanced">Advanced example:</label>
+                  <textarea id="advanced" rows="24" cols="50"></textarea>
+                  <input type="submit" id="profile" value="Profile" onclick="profileSomething(this.event)"/>
+                  <input type="submit" id="card" value="Card" onclick="cardSomething(this.event)"/>
+            </section>
+      </div>
+      <script>
+const FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+async function login(idp) {
+  const session = await solid.auth.currentSession();
+  if (!session)
+    await solid.auth.login(idp);
+  else
+    alert(`Logged in as ${session.webId}`);
+    
+  // Set up a local data store and associated data fetcher
+  const store = $rdf.graph();
+  const fetcher = new $rdf.Fetcher(store);
+
+  // Load the person's data into the store
+  const person = `${session.webId}`;//$('#profile').val();
+  await fetcher.load(person);
+
+  // Display their details
+  const fullName = store.any($rdf.sym(person), FOAF('name'));
+  document.getElementById("fullName").value=fullName && fullName.value;
+  window.fs = new SolidFileSystem(session.webId);
+  // Initialize isomorphic-git with our new file system
+  git.plugins.set('fs', window.fs);
+  
+
+  /*await fs.mkdir("scad", (err)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else console.log("mkdir "+err);
+  });*/
+  
+  /*await fs.unlink("scad/primary-disk.scad", (err)=>{
+    if(err!=null){
+    console.log(err);
+    }
+  });
+  await fs.writeFile("scad/primary-disk.scad", data, (err)=>{
+    if(err!=null){
+    console.log(err);
+    }
+  });
+  await window.fs.readdir("scad/*", {withFileTypes: true}, (err, files)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else console.log(files);
+  });*/
+  /*await window.fs.stat("scad/primary-disk.scad", (err, stat)=>{
+    if(err!=null){
+    console.log(err);
+    }
+    else{
+    var listContainer = document.createElement('div');
+    listContainer.id="solid-headers";
+    // Add it to the page
+    if(document.getElementById("solid-headers")===null)
+    document.getElementsByTagName('body')[0].appendChild(listContainer);
+    else 
+    document.getElementsByTagName('body')[0].replaceChild(listContainer, document.getElementById("solid-headers"));
+    // Make the list
+    var listElement = document.createElement('ul');
+
+    // Add it to the page
+    listContainer.appendChild(listElement);
+  var listItem = document.createElement('li');
+listItem.innerHTML = stat.name +" "+stat.isFile()+" "+stat.size+" "+stat.mtime+" "+stat.modified;
+listElement.appendChild(listItem);
+    }
+  });*/
+  /*await window.fs.readFile("scad/primary-disk.scad#size", (err, data)=>{
+    if(err===null){
+    console.log(data);
+    }
+    else console.log(err);
+  });
+  await window.fs.symlink("scad/primary-disk.scad", "scad/scad-poser/primary-disk.scad", (err)=>{
+    if(err===null){
+    }
+    else console.log(err);
+  });*/
+}
+login('https://roger.localhost:8443/');        
+      </script>
+      </div>
+</body>
+</html>
