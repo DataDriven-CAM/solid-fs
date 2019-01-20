@@ -175,45 +175,41 @@ class SolidFileSystem{
     }
 
     mkdir(path, m, cb){
-    	var mode = (typeof m !== "function")? m : {},
-        callback = (typeof m !== "function")? cb : m;
-        if(!path.endsWith("/"))path+="/";
-        var n = path.indexOf("/");
-        var prevN = -1;
-        var _this = this;
-        while(n>0){
-            async function f(){
-        await solid.auth.fetch(_this.origin+_this.trunk+path.substr(0,n+1))
-        .then((result)=>{
-        if(!result.ok && (result.status===401 || result.status===404)){
-            //console.log(prevN+" "+_this.origin+_this.trunk+path.substr(0,prevN+1)+" | "+path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))+" |");
-        solid.auth.fetch(_this.origin+_this.trunk+path.substr(0,prevN+1), {
-           method: 'POST',
-           headers:{
-               'Content-Type': 'text/turtle',
-	           'Link': '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
-               'Slug':  path.substr(prevN+1, path.indexOf("/", prevN+1)-(prevN+1))
-	         }
-           }).then((res) => {return res;})
-        .then((response) => {
-            if(!response.ok){
-            console.log(response.ok);
-            console.log(response.status);
-                callback(response.statusText);
-            } else callback(null);
-            
-        })
-        .catch((error) => {callback('Error: '+JSON.stringify(error));});
-            
+      var mode = (typeof m !== "function")? m : {},
+      callback = (typeof m !== "function")? cb : m;
+      //if(!path.endsWith("/"))path+="/";
+      var slugs = path.split("/");
+      console.log(slugs);
+      var n = 0;
+      var _this = this;
+      var branch ="";
+      async function f(){
+      while(n<slugs.length){
+                console.log(_this.origin+_this.trunk+branch+slugs[n]+"/");
+                let result = await solid.auth.fetch(_this.origin+_this.trunk+branch+slugs[n]+"/");
+                if(!result.ok && (result.status===401 || result.status===404)){
+                    console.log(n+" "+_this.origin+_this.trunk+branch+" | "+slugs[n]+" |");
+                    let response = await solid.auth.fetch(_this.origin+_this.trunk+branch, {
+                       method: 'POST',
+                       headers:{
+                           'Content-Type': 'text/turtle',
+            	           'Link': '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
+                           'Slug':  slugs[n]
+            	         }
+                   });
+                    if(!response.ok){
+                    console.log(response.ok);
+                    console.log(response.status);
+                        callback(response.statusText);
+                    } else callback(null);
+                    
+                }
+            branch +=slugs[n]+"/";
+            console.log("inc n "+n);
+            n++;
         }
-        }).catch((error) => {
-        });
-            };
-            f();
-            prevN = n;
-            n = path.indexOf("/", n+1);
-            if(n===path.length)n=-1;
-        }
+      };
+      f();
     }
 
     rmdir(path, callback){
