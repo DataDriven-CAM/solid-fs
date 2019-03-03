@@ -230,7 +230,7 @@ async function login(idp) {
     alert(`Logged in as ${session.webId}`);
     
   // Set up a local data store and associated data fetcher
-  const store = $rdf.graph();
+  /*const store = $rdf.graph();
   const fetcher = new $rdf.Fetcher(store);
 
   // Load the person's data into the store
@@ -239,7 +239,7 @@ async function login(idp) {
 
   // Display their details
   const fullName = store.any($rdf.sym(person), FOAF('name'));
-  document.getElementById("fullName").value=fullName && fullName.value;
+  document.getElementById("fullName").value=fullName && fullName.value;*/
   window.fs = new SolidFileSystem(session.webId);
   // Initialize isomorphic-git with our new file system
   git.plugins.set('fs', window.fs);
