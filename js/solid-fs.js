@@ -34,7 +34,7 @@ class SolidFileSystem{
     readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("read "+this.origin+this.trunk+"/"+path);
+        if(path.endsWith(".pack"))console.log(path);
         solid.auth.fetch(this.origin+this.trunk+"/"+path, {
            method: 'GET',
            headers:{
@@ -42,10 +42,20 @@ class SolidFileSystem{
 	   }
         }).then((result)=>{
           if(result.ok){
+              console.log(result);
+              console.log(result.type);
+              
             return result.text();
           }
           else {
-            callback("Status: "+result.status+" "+result.statusText+" for "+path, null);
+              if(path.endsWith(".pack"))console.log("Status: "+result.status+" "+result.statusText+" for "+path);
+                          var err=new Error("ENOENT: no such file or directory");
+                          //err.errno = -2;
+                          //err.code='ENOENT';
+                          err.syscall='stat';
+                          err.path = path;
+              
+            callback("blah", null);
           }
         }).then((t)=>{callback(null, t);}).catch((e) => {console.error('Error:', JSON.stringify(e));
         }).catch((error) => {console.error('Error:', error);});
@@ -179,7 +189,6 @@ class SolidFileSystem{
       var mode = (typeof m !== "function")? m : {},
       callback = (typeof m !== "function")? cb : m;
       //if(!path.endsWith("/"))path+="/";
-      console.log("mkdir "+path);
       var slugs = path.split("/");
       var n = 0;
       var _this = this;
@@ -222,10 +231,9 @@ class SolidFileSystem{
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         console.log("stat "+this.origin+this.trunk+"/"+path);
-        console.log(options);
+        //console.log(options);
         var leaf = this.leaf(this.origin+this.trunk+"/"+path);
       solid.auth.fetch(this.branch(this.origin+this.trunk+"/"+path)).then((response) => {
-          console.log(response);
           if(response.ok)return response.text();
           else {var err=new Error(response.statusText); err.code='ENOENT';
               if(typeof callback === "function")callback(err, null);}
@@ -233,7 +241,7 @@ class SolidFileSystem{
             var stat=new SolidFileSystem.Stats(leaf, true);
             var exists = false;
             var parser = new N3.Parser();
-            console.log(t);
+            //console.log(t);
             parser.parse(t, (error, quad, prefixes) => {
                 if (quad){
                     var quadJSON = quad.toJSON();
@@ -251,11 +259,11 @@ class SolidFileSystem{
                                stat.modified = quadJSON.object.value;
                             }
                             else if(quadJSON.subject.value===leaf && quadJSON.predicate.value.endsWith("#type")){
-                                console.log(quadJSON.predicate.value+" "+quadJSON.object.value);
+                                //console.log(quadJSON.predicate.value+" "+quadJSON.object.value);
                                //stat.modified = quadJSON.object.value;
                             }
                             else  if(quadJSON.subject.value===leaf){
-                                console.log(quadJSON.predicate.value);
+                                //console.log(quadJSON.predicate.value);
                             }
                     }
                 }
@@ -265,8 +273,11 @@ class SolidFileSystem{
                       if(typeof callback === "function")callback(null, stat);
                   }
                   else {
-                          var err=new Error("Does not exist. ", prefixes);
+                          var err=new Error("ENOENT: no such file or directory");
+                          err.errno = -2;
                           err.code='ENOENT';
+                          err.syscall='stat';
+                          err.path = path;
                           if(typeof callback === "function")callback(err, null);
                   }
                 }
