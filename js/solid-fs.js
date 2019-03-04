@@ -34,7 +34,6 @@ class SolidFileSystem{
     readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        if(path.endsWith(".pack"))console.log(path);
         solid.auth.fetch(this.origin+this.trunk+"/"+path, {
            method: 'GET',
            headers:{
@@ -42,9 +41,12 @@ class SolidFileSystem{
 	   }
         }).then((result)=>{
           if(result.ok){
-              console.log(result);
-              console.log(result.type);
-              
+              if(result.headers.has("Content-Type")){
+                  if(result.headers.get("Content-Type")==="application/octet-stream"){
+                      return result.arrayBuffer();
+                  }
+                  else return result.text();
+              }
             return result.text();
           }
           else {
@@ -57,7 +59,15 @@ class SolidFileSystem{
               
             callback("blah", null);
           }
-        }).then((t)=>{callback(null, t);}).catch((e) => {console.error('Error:', JSON.stringify(e));
+        }).then((t)=>{
+            console.log(typeof t);
+            if(typeof t === "string"){
+              callback(null, t);
+            }
+            else if(typeof t === "object")
+                callback(null, new Uint8Array(t, 0, t.byteLength));
+            
+        }).catch((e) => {console.error('Error:', JSON.stringify(e));
         }).catch((error) => {console.error('Error:', error);});
     }
 
@@ -88,8 +98,8 @@ class SolidFileSystem{
     writeFile(file, data, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log(this.origin+this.trunk+" write: "+file+" "+(typeof data));
         var contentType = (typeof data ==="string") ? 'text/plain': 'application/octet-stream';
+        if(file.endsWith(".pack"))console.log(contentType+" "+(typeof data));
         var n=file.lastIndexOf("/");
         var _this = this;
         /*if(n=>0){
@@ -107,12 +117,11 @@ class SolidFileSystem{
         solid.auth.fetch(this.origin+this.trunk+"/"+file, {
            method: 'PUT', // or 'PUT'
            headers:{
-	    'Content-Type': contentType,
-            'Content-Length': data.length.toString()
+	    'Content-Type': contentType
 	   },
            body: data // data can be `string` or {object}!
            }).then((res) => {return res;})
-        .then((response) => {console.log(response);callback(null);})
+        .then((response) => {callback(null);})
         .catch((error) => {callback('Error: '+JSON.stringify(error));});
     }
 
