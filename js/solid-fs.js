@@ -60,12 +60,12 @@ class SolidFileSystem{
             callback("blah", null);
           }
         }).then((t)=>{
-            console.log(typeof t);
             if(typeof t === "string"){
               callback(null, t);
             }
-            else if(typeof t === "object")
+            else if(typeof t === "object"){
                 callback(null, new Uint8Array(t, 0, t.byteLength));
+            }
             
         }).catch((e) => {console.error('Error:', JSON.stringify(e));
         }).catch((error) => {console.error('Error:', error);});
@@ -99,7 +99,6 @@ class SolidFileSystem{
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
         var contentType = (typeof data ==="string") ? 'text/plain': 'application/octet-stream';
-        if(file.endsWith(".pack"))console.log(contentType+" "+(typeof data));
         var n=file.lastIndexOf("/");
         var _this = this;
         /*if(n=>0){
@@ -239,12 +238,11 @@ class SolidFileSystem{
     stat(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        console.log("stat "+this.origin+this.trunk+"/"+path);
         //console.log(options);
         var leaf = this.leaf(this.origin+this.trunk+"/"+path);
       solid.auth.fetch(this.branch(this.origin+this.trunk+"/"+path)).then((response) => {
           if(response.ok)return response.text();
-          else {var err=new Error(response.statusText); err.code='ENOENT';
+          else {var err=new Error(response.statusText); err.code='ENOENT'; err.errno = -2;
               if(typeof callback === "function")callback(err, null);}
           }).then((t)=>{
             var stat=new SolidFileSystem.Stats(leaf, true);
@@ -292,7 +290,6 @@ class SolidFileSystem{
                 }
               });
           }).catch((error) => {
-              console.log(JSON.stringify(error));
               if(typeof callback === "function")callback(error, null);});
     }
 
