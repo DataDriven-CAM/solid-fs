@@ -53,7 +53,7 @@ window.fs = new SolidFileSystem(session.webId, '');
 * fs.readlink(path[, options], callback) : not implemented
 * fs.symlink(target, path[, type], callback) : not implemented
 
-The two major challenges are symlink emulation
+Major challenge is symlink emulation
 
 ### Testing 
 The testing framework is cypress https://www.cypress.io/.
