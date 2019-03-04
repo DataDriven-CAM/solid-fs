@@ -42,19 +42,18 @@ window.fs = new SolidFileSystem(session.webId, '');
 ### Project Progress
 
 
-* fs.readFile(path[, options], callback) : any text
-* fs.writeFile(file, data[, options], callback) : any text
+* fs.readFile(path[, options], callback) : any text or arraybuffer as Uint8Array
+* fs.writeFile(file, data[, options], callback) : any text or buffer
 * fs.unlink(path, callback)  : any hard link
 * fs.readdir(path[, options], callback) : returns array of Dirent's
 * fs.mkdir(path[, mode], callback) : creates an empty container
 * fs.rmdir(path, callback)  : deletes container, untested when there is deeper folders
-* fs.stat(path[, options], callback) : retrieves a Stats with what's known about a file at this time
+* fs.stat(path[, options], callback) : retrieves a Stats with what's known about a file at this time. Error if not found
 * fs.lstat(path[, options], callback) : not implemented
 * fs.readlink(path[, options], callback) : not implemented
 * fs.symlink(target, path[, type], callback) : not implemented
 
-The two major challenges are symlink emulation and mapping to binary Content-Type and getting 
-them written and retrieved without modification
+The two major challenges are symlink emulation
 
 ### Testing 
 The testing framework is cypress https://www.cypress.io/.
@@ -62,7 +61,7 @@ The testing framework is cypress https://www.cypress.io/.
 Currently use gulp to move some dependencies in for testing from 4 sibling working copies: [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git), 
 [solid-auth-client](https://github.com/solid/solid-auth-client), [rdflib.js](https://github.com/linkeddata/rdflib.js) and [N3.js](https://github.com/rdfjs/N3.js).
 
-Currently need a node-solid-server standing up on localhost 8443 before running yarn test.
+Currently need a node-solid-server(v5.0.0) standing up on localhost 8443 before running yarn test.
 
 ```
 yarn test
