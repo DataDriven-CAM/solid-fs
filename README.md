@@ -77,9 +77,9 @@ Major challenge is symlink emulation
 ### Testing 
 The testing framework is cypress https://www.cypress.io/.
 
-Currently need a node-solid-server(v5.6.16) standing up on localhost 8443 before running yarn test.
+Currently need a node-solid-server(v5.6.16) standing up on localhost 8443 before running pnpm test.
 
 ```
-yarn test
+pnpm test
 ```
 
