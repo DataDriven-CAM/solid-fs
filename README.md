@@ -1,6 +1,11 @@
 # solid-fs
 client side functionality of the node fs API interfacing to a solid pod
 
+### Install
+pnpm install
+
+gulp
+
 ### Header scripts
 ```
   <script type="text/javascript" src="js/bundle.umd.min.js"></script>
@@ -58,10 +63,7 @@ Major challenge is symlink emulation
 ### Testing 
 The testing framework is cypress https://www.cypress.io/.
 
-Currently use gulp to move some dependencies in for testing from 4 sibling working copies: [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git), 
-[solid-auth-client](https://github.com/solid/solid-auth-client), [rdflib.js](https://github.com/linkeddata/rdflib.js) and [N3.js](https://github.com/rdfjs/N3.js).
-
-Currently need a node-solid-server(v5.0.0) standing up on localhost 8443 before running yarn test.
+Currently need a node-solid-server(v5.6.16) standing up on localhost 8443 before running yarn test.
 
 ```
 yarn test

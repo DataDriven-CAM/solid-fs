@@ -1,7 +1,9 @@
+//
 class SolidFileSystem{
 
-    constructor(webId, trunk){
-        this.webId = webId;
+    constructor(session, trunk){
+        this.session = session;
+        this.webId = session.info.webId;
         
         this.trunk = (typeof trunk ==='undefined') ? '/public' : trunk;
         if(this.trunk.length>0){
@@ -21,7 +23,7 @@ class SolidFileSystem{
     access(path, m, cb){
     	var mode = (typeof m !== "function")? m : this.constants.F_OK,
         callback = (typeof m !== "function")? cb : m;
-      solid.auth.fetch(this.origin+this.trunk+path, {
+      session.fetch(this.origin+this.trunk+path, {
         method: 'OPTIONS'
       }).then(res => {return res;})
       .then((response) => {
@@ -34,7 +36,7 @@ class SolidFileSystem{
     readFile(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        solid.auth.fetch(this.origin+this.trunk+"/"+path, {
+        session.fetch(this.origin+this.trunk+"/"+path, {
            method: 'GET',
            headers:{
 	    'Accept': 'Authorization, Origin, text/*, image/*, application/octet-stream'
@@ -84,7 +86,7 @@ class SolidFileSystem{
         this.readFile(src, (err, data)=>{
         if(err===null){
           this.writeFile(dest, data, (err)=>{
-            if(err!=null){
+            if(err!==null){
               callback(err);
             }
             else callback(null);
@@ -113,7 +115,7 @@ class SolidFileSystem{
             f();
         }*/
         var _this = this;
-        solid.auth.fetch(this.origin+this.trunk+"/"+file, {
+        session.fetch(this.origin+this.trunk+"/"+file, {
            method: 'PUT', // or 'PUT'
            headers:{
 	    'Content-Type': contentType
@@ -125,7 +127,7 @@ class SolidFileSystem{
     }
 
     unlink(path, callback){
-      solid.auth.fetch(this.origin+this.trunk+"/"+path, {
+      session.fetch(this.origin+this.trunk+"/"+path, {
         method: 'DELETE'
       }).then(res => {return res;})
       .then((response) => {callback(null);})
@@ -149,7 +151,7 @@ class SolidFileSystem{
     readdir(path, op, cb){
     	var options = (typeof op !== "function")? op : {},
         callback = (typeof op !== "function")? cb : op;
-        solid.auth.fetch(this.origin+this.trunk+"/"+path)
+        session.fetch(this.origin+this.trunk+"/"+path)
         .then((result)=>{
 
             if(result.ok){
@@ -203,9 +205,9 @@ class SolidFileSystem{
       var branch ="";
       async function f(){
         while(n<slugs.length){
-            let result = await solid.auth.fetch(_this.origin+_this.trunk+branch+"/"+slugs[n]+"/");
+            let result = await session.fetch(_this.origin+_this.trunk+branch+"/"+slugs[n]+"/");
             if(!result.ok && (result.status===401 || result.status===404)){
-                let response = await solid.auth.fetch(_this.origin+_this.trunk+branch, {
+                let response = await session.fetch(_this.origin+_this.trunk+branch, {
                    method: 'POST',
                    headers:{
                        'Content-Type': 'text/turtle',
@@ -228,7 +230,7 @@ class SolidFileSystem{
     }
 
     rmdir(path, callback){
-      solid.auth.fetch(this.origin+this.trunk+"/"+path, {
+      session.fetch(this.origin+this.trunk+"/"+path, {
         method: 'DELETE'
       }).then(res => {return res;})
       .then((response) => {callback(null);})
@@ -240,7 +242,7 @@ class SolidFileSystem{
         callback = (typeof op !== "function")? cb : op;
         //console.log(options);
         var leaf = this.leaf(this.origin+this.trunk+"/"+path);
-      solid.auth.fetch(this.branch(this.origin+this.trunk+"/"+path)).then((response) => {
+      session.fetch(this.branch(this.origin+this.trunk+"/"+path)).then((response) => {
           if(response.ok)return response.text();
           else {var err=new Error(response.statusText); err.code='ENOENT'; err.errno = -2;
               if(typeof callback === "function")callback(err, null);}
@@ -309,7 +311,7 @@ class SolidFileSystem{
         callback = (typeof t !== "function")? cb : t;
         var n=path.lastIndexOf('/');
         console.log("symlink "+path+" ");
-        solid.auth.fetch(this.origin+this.trunk+"/"+path.substr(0,n+1), {
+        session.fetch(this.origin+this.trunk+"/"+path.substr(0,n+1), {
            method: 'PUT', // or 'PUT'
            headers:{
             'Content-Type': 'text/turtle',

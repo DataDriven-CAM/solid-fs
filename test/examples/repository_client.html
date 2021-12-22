@@ -4,10 +4,10 @@
   <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Repository interface</title>
-  <script type="text/javascript" src="js/bundle.umd.min.js"></script>
+  <script type="text/javascript" src="js/isomorphic-git/index.umd.min.js"></script>
   <!--script src="https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"></script-->
   <script type="text/javascript" src="js/rdflib.min.js"></script>
-  <script type="text/javascript" src="js/solid-auth-client.bundle.js"></script>
+  <!--script type="text/javascript" src="js/solid-client-authn-browser/solid-client-authn.bundle.js"></script-->
   <script type="text/javascript" src="js/N3.bundle.js"></script>
   <script type="text/javascript" src="js/solid-fs.js"></script>
 
@@ -15,8 +15,26 @@
 <body>
     <div id="pane">
       <div id="repository">
-        <script type="text/javascript">
-window.dir = 'tmp/solid-fs'
+          <section title="Connect...">
+                  <input type="text" name="" value="https://github.com/DataDriven-CAM/solid-fs.git"/>
+                  <input type="submit" id="clone" value="Submit"/>
+                  <input id="fullName" type="text" name=""/>
+          </section>
+          <section title="Connect...">
+                  <input type="text" name="" id="resource" value="scad/primary-disk.scad"/>
+                  <input type="submit" name="Get" id="get" value="Get"/>
+                  <input type="submit" id="delete" value="Delete"/>
+                  <input type="submit" id="write" value="Write"/>
+                  <input type="submit" id="stat" value="Stat"/>
+                  <label for="advanced">Advanced example:</label>
+                  <textarea id="advanced" rows="24" cols="50"></textarea>
+                  <input type="submit" id="profile" value="Profile"/>
+                  <input type="submit" id="card" value="Card"/>
+            </section>
+      </div>
+        <script type="module">
+import { handleIncomingRedirect, login, fetch, getDefaultSession } from './js/solid-client-authn-browser/solid-client-authn.bundle.js'
+window.dir = 'tmp/solid-fs';
 console.log(dir);
           function cloneRepository(event){
 git.clone({
@@ -26,7 +44,7 @@ git.clone({
     singleBranch: true,
     depth: 3
 }).then((response)=>{
-console.log('really done')
+console.log('really done');
 var treeObj = {'core': {
       'data' : [
         { "text" : "solid-git", "state" : {"opened" : true }, "children" : []}]}};
@@ -53,14 +71,14 @@ $(function() {
   singleBranch: true,
   tags: false
 })*/
-console.log('done')
+console.log('done');
           }
           
           function readSomething(event){
             var value = document.getElementById("resource").value;
             if(value.endsWith("/") || value.endsWith("*")){
 window.fs.readdir(value, {withFileTypes: true}, (err, files)=>{
-    if(err!=null){
+    if(err!==null){
     console.log(err);
     }
     else{
@@ -99,7 +117,7 @@ window.fs.readFile(value, (err, data)=>{
           function statSomething(event){
             try{
 fs.stat(document.getElementById("resource").value, (err, stat)=>{
-    if(err!=null){
+    if(err!==null){
     console.log(err);
     }
     else console.log(stat);
@@ -112,7 +130,7 @@ fs.stat(document.getElementById("resource").value, (err, stat)=>{
           
           function deleteSomething(event){
 fs.unlink(document.getElementById("resource").value, (err)=>{
-    if(err!=null){
+    if(err!==null){
     console.log(err);
     }
   });
@@ -161,7 +179,7 @@ primaryDisk();\
 //import(\"P-541.ZCD.STEP\");\
 ";
 fs.writeFile(document.getElementById("resource").value, data, (err)=>{
-    if(err!=null){
+    if(err!==null){
     console.log(err);
     }
     else console.log("wrote");
@@ -173,11 +191,11 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
               var trunk = fs.trunk;
               fs.trunk = '/profile/';
               fs.readdir(document.getElementById("resource").value, {withFileTypes: true}, (err, files)=>{
-                  if(err!=null){
+                  if(err!==null){
                   console.log(err);
                   }
                   else console.log(files);
-                  fs.trunk = trunk
+                  fs.trunk = trunk;
                 });
             }
             catch(ex){
@@ -190,7 +208,7 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
               var trunk = fs.trunk;
               fs.trunk = '/profile/';
               fs.readFile(document.getElementById("resource").value, (err, data)=>{
-                  if(err!=null){
+                  if(err!==null){
                   console.log(err);
                   }
                   else console.log(data);
@@ -202,45 +220,33 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
             }
           }
           
-        </script>
-          <section title="Connect...">
-                  <input type="text" name="" value="https://github.com/DataDriven-CAM/solid-fs.git"/>
-                  <input type="submit" value="Submit" onclick="cloneRepository(this.event)"/>
-                  <input id="fullName" type="text" name=""/>
-          </section>
-          <section title="Connect...">
-                  <input type="text" name="" id="resource" value="scad/primary-disk.scad"/>
-                  <input type="submit" name="Get" id="get" value="Get" onclick="readSomething(this.event)"/>
-                  <input type="submit" id="delete" value="Delete" onclick="deleteSomething(this.event)"/>
-                  <input type="submit" id="write" value="Write" onclick="writeSomething(this.event)"/>
-                  <input type="submit" id="stat" value="Stat" onclick="statSomething(this.event)"/>
-                  <label for="advanced">Advanced example:</label>
-                  <textarea id="advanced" rows="24" cols="50"></textarea>
-                  <input type="submit" id="profile" value="Profile" onclick="profileSomething(this.event)"/>
-                  <input type="submit" id="card" value="Card" onclick="cardSomething(this.event)"/>
-            </section>
-      </div>
-      <script>
-const FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
-async function login(idp) {
-  const session = await solid.auth.currentSession();
-  if (!session)
-    await solid.auth.login(idp);
-  else
-    alert(`Logged in as ${session.webId}`);
+    document.getElementById('clone').addEventListener('click', cloneRepository);
+    document.getElementById('get').addEventListener('click', readSomething);
+    document.getElementById('delete').addEventListener('click', deleteSomething);
+    document.getElementById('write').addEventListener('click', writeSomething);
+    document.getElementById('stat').addEventListener('click', statSomething);
+    document.getElementById('profile').addEventListener('click', profileSomething);
+    document.getElementById('card').addEventListener('click', cardSomething);
     
-  // Set up a local data store and associated data fetcher
-  /*const store = $rdf.graph();
-  const fetcher = new $rdf.Fetcher(store);
-
-  // Load the person's data into the store
-  const person = `${session.webId}`;//$('#profile').val();
-  await fetcher.load(person);
-
-  // Display their details
-  const fullName = store.any($rdf.sym(person), FOAF('name'));
-  document.getElementById("fullName").value=fullName && fullName.value;*/
-  window.fs = new SolidFileSystem(session.webId);
+    const FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+async function loginToPod(idp) {
+    await handleIncomingRedirect();
+  if (!getDefaultSession().info.isLoggedIn) {
+    // The `login()` redirects the user to their identity provider;
+    // i.e., moves the user away from the current page.
+    await login({
+      // Specify the URL of the user's Solid Identity Provider; e.g., "https://broker.pod.inrupt.com" or "https://inrupt.net"
+      oidcIssuer: "https://localhost:8443/",
+      // Specify the URL the Solid Identity Provider should redirect to after the user logs in,
+      // e.g., the current page for a single-page app.
+      redirectUrl: window.location.href,
+      // Pick an application name that will be shown when asked 
+      // to approve the application's access to the requested data.
+      clientName: "Repository Client"
+    });
+  }
+  //const session = new Session();
+  window.fs = new SolidFileSystem(getDefaultSession());
   // Initialize isomorphic-git with our new file system
   git.plugins.set('fs', window.fs);
   
@@ -302,7 +308,7 @@ listElement.appendChild(listItem);
     else console.log(err);
   });*/
 }
-login('https://roger.localhost:8443/');        
+loginToPod('https://roger.localhost:8443/');        
       </script>
       </div>
 </body>

@@ -25,7 +25,7 @@ var zlib = require('zlib');
          })
        }
        else{
-           //console.dir("resourcePath "+resourcePath);
+//           console.dir("resourcePath "+resourcePath);
          var filePath = __dirname+"/examples"+resourcePath;
          console.dir("filePath "+filePath);
          if(filePath.endsWith(".html")){
@@ -33,8 +33,9 @@ var zlib = require('zlib');
          console.dir("filePath "+filePath);
              
          }
-         else if(filePath.endsWith(".js") || filePath.endsWith(".map")){
+         else if(filePath.endsWith(".js") || resourcePath.startsWith("/js/") || filePath.endsWith(".map")){
            filePath = __dirname+"/examples"+resourcePath;
+           if(filePath.endsWith("/index"))filePath +=".js";
            response.writeHead(200, { 'Content-Type': 'application/javascript' });
          }
          else response.writeHead(200);
@@ -57,4 +58,13 @@ var zlib = require('zlib');
     socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
   });  
   theServer.on('close', function () { console.dir("the server closed ")});
+    process.on('<signal or error event>', _ => {
+      theServer.close(() => {
+        process.exit(0)
+      })
+      // If server hasn't finished in 1000ms, shut down process
+      setTimeout(() => {
+        theServer.exit(0)
+      }, 1000).unref() // Prevents the timeout from registering on event loop
+    });
   theServer.listen(8888);
