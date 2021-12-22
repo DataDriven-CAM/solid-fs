@@ -8,26 +8,40 @@ gulp
 
 ### Header scripts
 ```
-  <script type="text/javascript" src="js/bundle.umd.min.js"></script>
-  <script type="text/javascript" src="js/solid-auth-client.bundle.js"></script>
+  <script type="text/javascript" src="js/isomorphic-git/index.umd.min.js"></script>
+  <script type="text/javascript" src="js/rdflib.min.js"></script>
   <script type="text/javascript" src="js/N3.bundle.js"></script>
   <script type="text/javascript" src="js/solid-fs.js"></script>
 
 ```
 
-### Pass webId to the SolidFileSystem
+### Pass session to the SolidFileSystem
 ```
-async function login(idp) {
-  const session = await solid.auth.currentSession();
-  if (!session)
-    await solid.auth.login(idp);
-  else
-    alert(`Logged in as ${session.webId}`);
-  window.fs = new SolidFileSystem(session.webId);
+import { handleIncomingRedirect, login, fetch, getDefaultSession } from './js/solid-client-authn-browser/solid-client-authn.bundle.js'
+
+    const FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+async function loginToPod(idp) {
+    await handleIncomingRedirect();
+  if (!getDefaultSession().info.isLoggedIn) {
+    // The `login()` redirects the user to their identity provider;
+    // i.e., moves the user away from the current page.
+    await login({
+      // Specify the URL of the user's Solid Identity Provider; e.g., "https://broker.pod.inrupt.com" or "https://inrupt.net"
+      oidcIssuer: "https://localhost:8443/",
+      // Specify the URL the Solid Identity Provider should redirect to after the user logs in,
+      // e.g., the current page for a single-page app.
+      redirectUrl: window.location.href,
+      // Pick an application name that will be shown when asked 
+      // to approve the application's access to the requested data.
+      clientName: "Repository Client"
+    });
+  }
+  //const session = new Session();
+  window.fs = new SolidFileSystem(getDefaultSession());
   // Initialize isomorphic-git with our new file system
   git.plugins.set('fs', window.fs);
 }
-login('https://roger.localhost:8443/');        
+loginToPod('https://roger.localhost:8443/');        
 
 ```
 
@@ -36,12 +50,12 @@ Now use isomorphic-git https://isomorphic-git.org/en/ or use the fs functions di
 the SolidFileSystem constructor can take a trunk instead of the default '/public/'.
 
 ```
-window.fs = new SolidFileSystem(session.webId, 'profile');
+window.fs = new SolidFileSystem(session, 'profile');
 ```
 or to be right at the root
 
 ```
-window.fs = new SolidFileSystem(session.webId, '');
+window.fs = new SolidFileSystem(session, '');
 ```
 
 ### Project Progress
