@@ -5,11 +5,11 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Repository interface</title>
   <script type="text/javascript" src="js/isomorphic-git/index.umd.min.js"></script>
-  <!--script src="https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"></script-->
   <script type="text/javascript" src="js/rdflib.min.js"></script>
-  <!--script type="text/javascript" src="js/solid-client-authn-browser/solid-client-authn.bundle.js"></script-->
-  <script type="text/javascript" src="js/N3.bundle.js"></script>
+  <script type="text/javascript" src="js/n3.min.js"></script>
   <script type="text/javascript" src="js/solid-fs.js"></script>
+  <!--script type="text/javascript" src="js/solid-client-authn-browser/solid-client-authn.bundle.js"></script-->
+  <script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser/dist/solid-client-authn.bundle.js"></script>
 
 </head>
 <body>
@@ -32,12 +32,15 @@
                   <input type="submit" id="card" value="Card"/>
             </section>
       </div>
-        <script type="module">
-import { handleIncomingRedirect, login, fetch, getDefaultSession } from './js/solid-client-authn-browser/solid-client-authn.bundle.js'
+        <script type="text/javascript">
+//import { handleIncomingRedirect, login, fetch, getDefaultSession } from './js/solid-client-authn-browser/solid-client-authn.bundle.js'
+//import { handleIncomingRedirect, login, fetch, getDefaultSession } from './@inrupt/solid-client-authn-browser'
+//import { handleIncomingRedirect, login, fetch, getDefaultSession } from 'https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1.11.3/dist/solid-client-authn.bundle.js'
 window.dir = 'tmp/solid-fs';
 console.log(dir);
           function cloneRepository(event){
 git.clone({
+    fs: window.fs,
     dir: window.dir,
     corsProxy: 'https://cors.isomorphic-git.org',
     url: 'https://github.com/DataDriven-CAM/solid-fs.git',
@@ -77,7 +80,7 @@ console.log('done');
           function readSomething(event){
             var value = document.getElementById("resource").value;
             if(value.endsWith("/") || value.endsWith("*")){
-window.fs.readdir(value, {withFileTypes: true}, (err, files)=>{
+    window.fs.readdir(value, {withFileTypes: true}, (err, files)=>{
     if(err!==null){
     console.log(err);
     }
@@ -116,7 +119,7 @@ window.fs.readFile(value, (err, data)=>{
           
           function statSomething(event){
             try{
-fs.stat(document.getElementById("resource").value, (err, stat)=>{
+window.fs.stat(document.getElementById("resource").value, (err, stat)=>{
     if(err!==null){
     console.log(err);
     }
@@ -129,7 +132,7 @@ fs.stat(document.getElementById("resource").value, (err, stat)=>{
           }
           
           function deleteSomething(event){
-fs.unlink(document.getElementById("resource").value, (err)=>{
+window.fs.unlink(document.getElementById("resource").value, (err)=>{
     if(err!==null){
     console.log(err);
     }
@@ -178,7 +181,7 @@ module make_ring_of(radius, count)\
 primaryDisk();\
 //import(\"P-541.ZCD.STEP\");\
 ";
-fs.writeFile(document.getElementById("resource").value, data, (err)=>{
+window.fs.writeFile(document.getElementById("resource").value, data, (err)=>{
     if(err!==null){
     console.log(err);
     }
@@ -188,14 +191,14 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
           
           function profileSomething(event){
             try{
-              var trunk = fs.trunk;
-              fs.trunk = '/profile/';
-              fs.readdir(document.getElementById("resource").value, {withFileTypes: true}, (err, files)=>{
+              var trunk = window.fs.trunk;
+              window.fs.trunk = '/profile/';
+              window.fs.readdir(document.getElementById("resource").value, {withFileTypes: true}, (err, files)=>{
                   if(err!==null){
                   console.log(err);
                   }
                   else console.log(files);
-                  fs.trunk = trunk;
+                  window.fs.trunk = trunk;
                 });
             }
             catch(ex){
@@ -205,14 +208,14 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
           
           function cardSomething(event){
             try{
-              var trunk = fs.trunk;
-              fs.trunk = '/profile/';
-              fs.readFile(document.getElementById("resource").value, (err, data)=>{
+              var trunk = window.fs.trunk;
+              window.fs.trunk = '/profile/';
+              window.fs.readFile(document.getElementById("resource").value, (err, data)=>{
                   if(err!==null){
                   console.log(err);
                   }
                   else console.log(data);
-                  fs.trunk = trunk
+                  window.fs.trunk = trunk
                 });
             }
             catch(ex){
@@ -220,21 +223,14 @@ fs.writeFile(document.getElementById("resource").value, data, (err)=>{
             }
           }
           
-    document.getElementById('clone').addEventListener('click', cloneRepository);
-    document.getElementById('get').addEventListener('click', readSomething);
-    document.getElementById('delete').addEventListener('click', deleteSomething);
-    document.getElementById('write').addEventListener('click', writeSomething);
-    document.getElementById('stat').addEventListener('click', statSomething);
-    document.getElementById('profile').addEventListener('click', profileSomething);
-    document.getElementById('card').addEventListener('click', cardSomething);
     
     const FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
 async function loginToPod(idp) {
-    await handleIncomingRedirect();
-  if (!getDefaultSession().info.isLoggedIn) {
+    await solidClientAuthentication.handleIncomingRedirect();
+  if (!solidClientAuthentication.getDefaultSession().info.isLoggedIn) {
     // The `login()` redirects the user to their identity provider;
     // i.e., moves the user away from the current page.
-    await login({
+    await solidClientAuthentication.login({
       // Specify the URL of the user's Solid Identity Provider; e.g., "https://broker.pod.inrupt.com" or "https://inrupt.net"
       oidcIssuer: "https://localhost:8443/",
       // Specify the URL the Solid Identity Provider should redirect to after the user logs in,
@@ -246,11 +242,18 @@ async function loginToPod(idp) {
     });
   }
   //const session = new Session();
-  window.fs = new SolidFileSystem(getDefaultSession());
+  window.fs = new SolidFileSystem(solidClientAuthentication.getDefaultSession());
   // Initialize isomorphic-git with our new file system
-  git.plugins.set('fs', window.fs);
+  //git.plugins.set('fs', window.fs);
   
 
+    document.getElementById('clone').addEventListener('click', cloneRepository);
+    document.getElementById('get').addEventListener('click', readSomething);
+    document.getElementById('delete').addEventListener('click', deleteSomething);
+    document.getElementById('write').addEventListener('click', writeSomething);
+    document.getElementById('stat').addEventListener('click', statSomething);
+    document.getElementById('profile').addEventListener('click', profileSomething);
+    document.getElementById('card').addEventListener('click', cardSomething);
   /*await fs.mkdir("scad", (err)=>{
     if(err!=null){
     console.log(err);

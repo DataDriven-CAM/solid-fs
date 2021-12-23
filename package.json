@@ -8,7 +8,6 @@
   "license": "MIT",
   "private": false,
   "devDependencies": {
-    "@inrupt/solid-client-authn-browser": "^1.11.3",
     "N3.js": "^1.12.2",
     "cypress": "^9.2.0",
     "gulp": "^4.0.2",
@@ -24,5 +23,8 @@
   "scripts": {
     "start": "node test/server.js",
     "test": "yarn start & wait-on http://localhost:8888/repository_client.html & yarn run cypress open"
+  },
+  "dependencies": {
+    "@inrupt/solid-client-authn-browser": "^1.11.3"
   }
 }
